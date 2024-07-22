@@ -1,19 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const asyncHandler = require("express-async-handler");
 const Joi = require('joi');
+const {validateCreateBook,validateUpdateBook, Book} = require("../models/Book");
+const { Author } = require("../models/Author");
 
 
-const books = [
-    {
-        id: 1,
-        name: "harry potter"
-    },
-    {
-        id: 2,
-        name: "The Summer I turned pretty"
-    }
-
-]
 /**
  * @desc Get all books
  * @route /api/books
@@ -21,10 +13,12 @@ const books = [
  * @access public 
  * 
  */
-router.get("/", (req,res) => {
-    res.status(200).json(books);
-
-});
+router.get("/", asyncHandler(
+    async (req,res) => {
+    const books = await Book.find().populate("author",["_id","firstName","lastName"]);
+    res.status(200).json(books);    
+    }
+));
 
 /**
  * @desc Get book by id
@@ -34,14 +28,17 @@ router.get("/", (req,res) => {
  * 
  */
 // haydkhol ydawar 3ala el ketab fel array if found send the response
-router.get("/:id",(req, res)=>{
-    const book = books.find(b => b.id === parseInt(req.params.id));
+router.get("/:id",asyncHandler (
+    async(req, res)=>{
+    //const book = books.find(b => b.id === parseInt(req.params.id));
+    const book = await Book.findById(req.params.id);
     if(book){
         res.status(200).json(book);
     } else{
         res.status(404).json({message: "book not found" });
     }
-});
+}
+));
 
 /**
  * @desc Create new book
@@ -50,20 +47,29 @@ router.get("/:id",(req, res)=>{
  * @access public 
  * 
  */
-router.post("/",(req,res) =>{
-   
-    const {error} = validateCreateBook(req.body);
+router.post("/",asyncHandler( async(req,res) =>{
+    
+    const {error} =   validateCreateBook(req.body);
     if (error){
         return res.status(400).json({message: error.details[0].message});
     }
+
     console.log(req.body);
-    const book = {
-        id: books.length  + 1,
-        title: req.body.title
+    
+    const book = new Book (
+        {
+            title: req.body.title,
+            author: req.body.author,
+            description: req.body.description,
+            price: req.body.price,
+            cover: req.body.cover,
+        }
+    )
+    //books.push(book);
+    const result = await book.save();
+    res.status(201).json(result); // 201 => created successfully 
     }
-    books.push(book);
-    res.status(201).json(book); // 201 => created successfully 
-});
+));
 /**
  * @desc Update a book
  * @route /api/books:id
@@ -72,18 +78,32 @@ router.post("/",(req,res) =>{
  * 
  */
 
-router.put("/:id",(req,res) => {
+router.put("/:id",asyncHandler(
+    async(req,res) => {
+
     const {error} = validateUpdateBook(req.body);
     if (error){
         return res.status(400).json({message: error.details[0].message});
     }
-    const book = books.find(b => b.id === parseInt(req.params.id));
+
+    const updatedBook = await Book.findByIdAndUpdate(req.params.id,{
+        $set: {
+            title: req.body.title,
+            author: req.body.author,
+            description: req.body.description,
+            price: req.body.price,
+            cover: req.body.cover,
+        }
+    }, {new:true});
+    /*const book = books.find(b => b.id === parseInt(req.params.id));
     if(book){
         res.status(200).json({message:" book has been updated "});
     } else{
         res.status(404).json({message: "book not found"});
-    }
-});
+    }*/
+    res.status(200).json(updatedBook);
+}
+));
 
 /**
  * @desc Delete a book
@@ -93,34 +113,18 @@ router.put("/:id",(req,res) => {
  * 
  */
 
-router.delete("/:id",(req,res) => {
-    const {error} = validateUpdateBook(req.body);
-    if (error){
-        return res.status(400).json({message: error.details[0].message});
-    }
-    const book = books.find(b => b.id === parseInt(req.params.id));
+router.delete("/:id",asyncHandler(async(req,res) => {
+    //const book = books.find(b => b.id === parseInt(req.params.id));
+    const book = await Book.findById(req.params.id);
     if(book){
+        await Book.findByIdAndDelete(req.params.id);
         res.status(200).json({message:" book has been deleted "});
     } else{
         res.status(404).json({message: "book not found"});
     }
-});
-// Validate Create book
-function validateCreateBook(obj){
-    const schema = Joi.object({
-        title: Joi.string().trim().min(3).max(200).required(),
-    });
-    return schema.validate(obj);
 }
+));
 
-
-// Validate Update book
-function validateUpdateBook(obj){
-    const schema = Joi.object({
-        title: Joi.string().trim().min(3).max(200),
-    });
-    return schema.validate(obj);
-}
 
 
 module.exports = router;
