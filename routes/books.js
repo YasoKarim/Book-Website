@@ -4,14 +4,13 @@ const asyncHandler = require("express-async-handler");
 const Joi = require('joi');
 const {validateCreateBook,validateUpdateBook, Book} = require("../models/Book");
 const { Author } = require("../models/Author");
-
+const { verifyTokenAndAdmin } = require("../middlewares/verifyToken");
 
 /**
  * @desc Get all books
  * @route /api/books
  * @method GET
  * @access public 
- * 
  */
 router.get("/", asyncHandler(
     async (req,res) => {
@@ -44,10 +43,10 @@ router.get("/:id",asyncHandler (
  * @desc Create new book
  * @route /api/books
  * @method POST
- * @access public 
+ * @access private (only admin)
  * 
  */
-router.post("/",asyncHandler( async(req,res) =>{
+router.post("/",verifyTokenAndAdmin,asyncHandler( async(req,res) =>{
     
     const {error} =   validateCreateBook(req.body);
     if (error){
@@ -74,11 +73,11 @@ router.post("/",asyncHandler( async(req,res) =>{
  * @desc Update a book
  * @route /api/books:id
  * @method PUT
- * @access public 
+ * @access private (only admin) 
  * 
  */
 
-router.put("/:id",asyncHandler(
+router.put("/:id",verifyTokenAndAdmin,asyncHandler(
     async(req,res) => {
 
     const {error} = validateUpdateBook(req.body);
@@ -109,11 +108,10 @@ router.put("/:id",asyncHandler(
  * @desc Delete a book
  * @route /api/books:id
  * @method Delete
- * @access public 
- * 
+ * @access private (only admin)
  */
 
-router.delete("/:id",asyncHandler(async(req,res) => {
+router.delete("/:id",verifyTokenAndAdmin,asyncHandler(async(req,res) => {
     //const book = books.find(b => b.id === parseInt(req.params.id));
     const book = await Book.findById(req.params.id);
     if(book){

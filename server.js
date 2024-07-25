@@ -1,3 +1,46 @@
+const http = require("http");
+const express = require("express");
+const booksPath = require("./routes/books");
+const authorsPath = require("./routes/authors");
+const authPath = require("./routes/auth");
+const userPath = require("./routes/users");
+const mongoose = require("mongoose");
+const { error } = require("console");
+const dotenv = require("dotenv");
+const { connect } = require("http2");
+const logger = require("./middlewares/logger")
+const {notFound, errorHandler} = require("./middlewares/errors")
+const connectToDB = require("./config/db");
+
+dotenv.config();
+
+connectToDB();
+
+const app = express();
+
+// Apply middleware
+app.use(express.json());
+app.use(logger);
+
+// dah haykon feh route l kol paths
+//Routes
+app.use("/api/books",booksPath);
+app.use("/api/authors",authorsPath);
+app.use("/api/auth",authPath);
+app.use("/api/users",userPath);
+
+app.get("/",(req,res) =>{
+    res.send("Welcome Yasmine");
+});
+// Error After routes error handler middleware
+app.use(notFound);
+app.use(errorHandler)
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+
+
 /*
 const express = require('express');
 const app = express();
@@ -19,41 +62,12 @@ app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 */
-
-
-const http = require("http");
-const express = require("express");
-const booksPath= require("./routes/books");
-const authorsPath= require("./routes/authors");
-const mongoose = require("mongoose");
-const { error } = require("console");
-const dotenv = require("dotenv");
-
-dotenv.config();
-//Connection To Database
-mongoose.connect(process.env.MONGO_URI)
-        .then(() => console.log("Connected to MongoDB..."))
-        .catch((error) => console.log("Connection Failed to MongoDB!",error));
-
-
-//const { title } = require("process");
-
-
-const app = express();
-// Apply middleware
-app.use(express.json());
-
-// dah haykon feh route l kol paths
-app.use("/api/books",booksPath);
-app.use("/api/authors",authorsPath);
-
-app.get("/",(req,res) =>{
-    res.send("Welcome Yasmine");
+/*
+app.use((req,res,next) => {
+    console.log("Middleware is working");
+    next
 });
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`));
-
-
+*/
 /*
 //app.post();
 //app.put();

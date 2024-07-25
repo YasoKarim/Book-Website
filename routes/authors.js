@@ -2,18 +2,7 @@ const express= require("express");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const {Author,validateCreateAuthor,validateUpdateAuthor} = require("../models/Author");
-
-/*
-const authors = [
-    {
-    id: 1,
-    firstName: "Yasmine",
-    lastName: "Karim",
-    nationality: "Egyptian",
-    image: "default-image.png",
-    },
-]*/
-
+const { verifyTokenAndAdmin } = require("../middlewares/verifyToken");
 /**
  * @desc Get all authors
  * @route /api/authors
@@ -55,10 +44,10 @@ router.get("/:id", asyncHandler(
  * @desc Create new authors
  * @route /api/authors
  * @method POST
- * @access public 
+ * @access private (only admin)
  * 
  */
-router.post("/", asyncHandler(async (req,res) =>{
+router.post("/",verifyTokenAndAdmin, asyncHandler(async (req,res) =>{
 
     const {error} = validateCreateAuthor(req.body);
     if (error){
@@ -76,15 +65,16 @@ router.post("/", asyncHandler(async (req,res) =>{
         //authors.push(author);
         res.status(201).json(author); // 201 => created successfully 
 }));
+
 /**
  * @desc Update a author
  * @route /api/authors:id
  * @method PUT
- * @access public 
+ * @access private (only admin)  
  * 
  */
 
-router.put("/:id",asyncHandler(async (req,res) => {
+router.put("/:id", verifyTokenAndAdmin,asyncHandler(async (req,res) => {
     // check if it's valid and then update
     const {error} = validateUpdateAuthor(req.body);
     
@@ -117,11 +107,10 @@ router.put("/:id",asyncHandler(async (req,res) => {
  * @desc Delete an author
  * @route /api/authors:id
  * @method Delete
- * @access public 
- * 
+ * @access private (only admin)  
  */
 
-router.delete("/:id",asyncHandler(async (req,res) => {
+router.delete("/:id",verifyTokenAndAdmin,asyncHandler(async (req,res) => {
             const author = await Author.findById(req.params.id);
         if(author){
             await Author.findByIdAndDelete(req.params.id);
