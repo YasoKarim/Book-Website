@@ -4,6 +4,7 @@ const booksPath = require("./routes/books");
 const authorsPath = require("./routes/authors");
 const authPath = require("./routes/auth");
 const userPath = require("./routes/users");
+const passwordPath = require("./routes/password");
 const mongoose = require("mongoose");
 const { error } = require("console");
 const dotenv = require("dotenv");
@@ -20,14 +21,18 @@ const app = express();
 
 // Apply middleware
 app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 app.use(logger);
 
+// Set view engine
+app.set('view engine', 'ejs');
 // dah haykon feh route l kol paths
 //Routes
 app.use("/api/books",booksPath);
 app.use("/api/authors",authorsPath);
 app.use("/api/auth",authPath);
 app.use("/api/users",userPath);
+app.use("/password",passwordPath);
 
 app.get("/",(req,res) =>{
     res.send("Welcome Yasmine");
